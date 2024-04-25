@@ -2,7 +2,7 @@
 import { apiRegistry, actionsRegistry, geometryService } from "@penta-b/ma-lib";
 import { getArea, getLength } from "ol/sphere.js";
 import { callQueryService } from "./queryService";
-import { LineString } from "ol/geom";
+import { LineString } from "ol/geom.js";
 
 //vectorLayer declaration
 let VL = null;
@@ -74,9 +74,18 @@ async function overlayLine(coordinates, code) {
     const length = getLength(line, { projection: code })
     const lengthInKm = length / 1000;
     const el = document.createElement("div");
-    // how do make each unique length show?
     el.innerText = `${lengthInKm.toFixed(1)} Km`;
-    el.style.color = "#610030";
+    el.style = "opacity: 1;" +
+      " font-weight: bold;" +
+      "position: relative; " +
+      "background: rgba(0, 0, 0, 0.8);" +
+      "border-radius: 4px;" +
+      "color: whitesmoke;" +
+      "padding: 4px 8px;" +
+      "opacity: 0.7;" +
+      "white-space: nowrap;" +
+      "font-size: 12px; " +
+      "background-color: rgba(0, 0, 0, 0.8);";
     const [Overlay] = await apiRegistry.getApis(["Overlay"]);
     const overlayLine = new Overlay({
       element: el,
@@ -92,8 +101,19 @@ async function overlayArea(feat, code, center) {
   const areaInKmSq = area / (1000 * 1000);
   const areaEl = document.createElement("div");
   areaEl.innerHTML = `${areaInKmSq.toFixed(2)} km&sup2`;
-  areaEl.style.color = "#610030";
-  areaEl.style.fontSize = "0.8rem";
+  //setting the style
+  areaEl.style = "opacity: 1;" +
+    " font-weight: bold;" +
+    "position: relative; " +
+    "background: rgba(0, 0, 0, 0.8);" +
+    "border-radius: 4px;" +
+    "color: whitesmoke;" +
+    "padding: 4px 8px;" +
+    "opacity: 0.7;" +
+    "white-space: nowrap;" +
+    "font-size: 12px; " +
+    "background-color: rgba(0, 0, 0, 0.8);";
+  //adding the overlay
   const [Overlay] = await apiRegistry.getApis(["Overlay"]);
   const overlayArea = new Overlay({
     element: areaEl,
