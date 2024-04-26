@@ -4,7 +4,7 @@ import { getArea, getLength } from "ol/sphere.js";
 import { callQueryService } from "./queryService";
 import { LineString } from "ol/geom.js";
 
-//vectorLayer declaration
+//Global declaration
 let VL = null;
 let drawing = null;
 let overlayArray = [];
@@ -18,15 +18,17 @@ export const validateVL = (options) => {
 // Checking the if the vector layer already exists to clear all the features on it
 export const drawShape = async (layer, func, code) => {
   if (!VL) {
-    const [VectorLayer] = await apiRegistry.getApis(["VectorLayer"]);
+    //getting the vectorLayer and drawing Functionality (classes) from penta's redux
+    const [VectorLayer, Drawing] = await apiRegistry.getApis(["VectorLayer", "Drawing"]);
     VL = new VectorLayer();
-    actionsRegistry.dispatch("addVectorLayer", VL);
-    const [Drawing] = await apiRegistry.getApis(["Drawing"]);
     drawing = new Drawing({
       type: "polygon",
       vectorLayer: VL,
     })
+    //adding the vectorLayer and the drawing to the map
+    actionsRegistry.dispatch("addVectorLayer", VL);
     actionsRegistry.dispatch("addInteraction", drawing);
+    //what happens when the drawing finishes...
     drawing.setOnDrawFinish(async (feature) => {
       //structure definition
       const geom = feature.getGeometry(); // getting the geometry of the feature
@@ -73,22 +75,12 @@ async function overlayLine(coordinates, code) {
     const line = new LineString(origLine);
     const length = getLength(line, { projection: code })
     const lengthInKm = length / 1000;
-    const el = document.createElement("div");
-    el.innerText = `${lengthInKm.toFixed(1)} Km`;
-    el.style = "opacity: 1;" +
-      " font-weight: bold;" +
-      "position: relative; " +
-      "background: rgba(0, 0, 0, 0.8);" +
-      "border-radius: 4px;" +
-      "color: whitesmoke;" +
-      "padding: 4px 8px;" +
-      "opacity: 0.7;" +
-      "white-space: nowrap;" +
-      "font-size: 12px; " +
-      "background-color: rgba(0, 0, 0, 0.8);";
+    const lengthEl = document.createElement("div");
+    lengthEl.innerText = `${lengthInKm.toFixed(1)} Km`;
+    lengthStyle(lengthEl)
     const [Overlay] = await apiRegistry.getApis(["Overlay"]);
     const overlayLine = new Overlay({
-      element: el,
+      element: lengthEl,
       position: middle,
     });
     overlayArray.push(overlayLine);
@@ -102,17 +94,7 @@ async function overlayArea(feat, code, center) {
   const areaEl = document.createElement("div");
   areaEl.innerHTML = `${areaInKmSq.toFixed(2)} km&sup2`;
   //setting the style
-  areaEl.style = "opacity: 1;" +
-    " font-weight: bold;" +
-    "position: relative; " +
-    "background: rgba(0, 0, 0, 0.8);" +
-    "border-radius: 4px;" +
-    "color: whitesmoke;" +
-    "padding: 4px 8px;" +
-    "opacity: 0.7;" +
-    "white-space: nowrap;" +
-    "font-size: 12px; " +
-    "background-color: rgba(0, 0, 0, 0.8);";
+  areaStyle(areaEl);
   //adding the overlay
   const [Overlay] = await apiRegistry.getApis(["Overlay"]);
   const overlayArea = new Overlay({
@@ -129,10 +111,36 @@ function clearOverlay() {
   overlayArray = [];
 }
 
-//function to reset the clear the layers of all the feautres and the overlays on it
+//function to reset and clear the layers of all the feautres and the overlays on it
 function resetLayer() {
   VL.clear();
   actionsRegistry.dispatch("removeInteraction", drawing);
   VL = null;
   clearOverlay();
+}
+
+//Length Style 
+function lengthStyle(el) {
+  return el.style = "opacity: 1;" +
+    " font-weight: bold;" +
+    "position: relative; " +
+    "border-radius: 4px;" +
+    "color: whitesmoke;" +
+    "padding: 4px 8px;" +
+    "opacity: 0.7;" +
+    "white-space: nowrap;" +
+    "font-size: 12px; " +
+    "background-color: #000;";
+}
+//Area Style
+function areaStyle(el) {
+  return el.style = "opacity: 1;" +
+    " font-weight: bold;" +
+    "position: relative; " +
+    "border-radius: 4px;" +
+    "color: black;" +
+    "padding: 4px 8px;" +
+    "white-space: nowrap;" +
+    "font-size: 12px; " +
+    "background-color: #F28C28";
 }
