@@ -19,7 +19,7 @@ export const validateVL = (options) => {
 export const drawShape = async (layer, func, code) => {
   if (!VL) {
     //getting the vectorLayer and drawing Functionality (classes) from penta's redux
-    const [VectorLayer, Drawing] = await apiRegistry.getApis(["VectorLayer", "Drawing"]);
+    const [VectorLayer, Drawing, Overlay] = await apiRegistry.getApis(["VectorLayer", "Drawing", "Overlay"]);
     VL = new VectorLayer();
     drawing = new Drawing({
       type: "polygon",
@@ -28,6 +28,37 @@ export const drawShape = async (layer, func, code) => {
     //adding the vectorLayer and the drawing to the map
     actionsRegistry.dispatch("addVectorLayer", VL);
     actionsRegistry.dispatch("addInteraction", drawing);
+    //what happens when the drawing starts
+    drawing.setOnDrawStart((_, feature) => {
+      feature.olFeature.getGeometry().on("change", (e) => {
+        console.log("geometry Ol", feature.olFeature.getGeometry().getCoordinates()[0]);
+        let geom = e.target;
+        let coordinates = geom.getCoordinates()[0];
+        // console.log("coordinatesOnStart", coordinates);
+        clearOverlay();
+        for (let i = 0; i < coordinates.length - 1; i++) {
+          const startingLine = coordinates[i];
+          const nextLine = coordinates[i + 1];
+          const length = getLength(new LineString([startingLine, nextLine]), { projection: code });
+          // console.log(new LineString([start, end]))
+          const lineLengthInKm = length / 1000;
+          const midLine = [
+            (startingLine[0] + nextLine[0]) / 2,
+            (startingLine[1] + nextLine[1]) / 2,
+          ];
+
+          let el = document.createElement("div");
+          el.innerHTML = `${lineLengthInKm.toFixed(1)} km`;
+          lengthStyle(el)
+          let ovv = new Overlay({
+            element: el,
+            position: midLine,
+          });
+          overlayArray.push(ovv);
+          actionsRegistry.dispatch("addOverlay", ovv);
+        }
+      });
+    });
     //what happens when the drawing finishes...
     drawing.setOnDrawFinish(async (feature) => {
       //structure definition
